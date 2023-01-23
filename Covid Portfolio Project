@@ -1,0 +1,112 @@
+SELECT *
+FROM firstproject-374923.Covid.covid_deaths
+WHERE continent is not null
+ORDER BY 3,4
+
+## Select data that will be used
+#SELECT location, date, total_cases, new_cases, total_deaths, population
+#FROM firstproject-374923.Covid.covid_deaths
+#order by 1,2
+
+# Look at total cases vs total deaths
+# Shows likelyhood of death in each country
+CREATE VIEW Covid.LikelyhoodOfDeathInEachCountry
+AS
+SELECT location, date, total_cases, total_deaths, (total_deaths/total_cases)*100 AS DeathPercentage
+FROM firstproject-374923.Covid.covid_deaths
+WHERE continent is not null
+
+
+# Looking at Total Cases vs Population
+CREATE VIEW Covid.TotalCasesVsPopulation
+AS
+SELECT location, date, population, total_cases, (total_cases/population)*100 AS PercentagePopulationInfected
+FROM firstproject-374923.Covid.covid_deaths
+WHERE continent is not null
+
+
+# Looking at countries with Highest infection rate compared to population
+CREATE VIEW Covid.CountriesWtHighestInfectionRateComparedToPopulation
+AS
+SELECT location, population, Max(total_cases) AS HighestInfectionCount, MAX((total_cases/population))*100 AS 
+PercentagePopulationInfected
+FROM firstproject-374923.Covid.covid_deaths
+WHERE continent is not null
+GROUP BY population, location
+
+
+## Showing countries with the highest death count per pop.
+CREATE VIEW Covid.CountriesWtHighestDeathCountPerPopulation
+AS
+SELECT location, Max(total_deaths) AS TotalDeathCount
+FROM firstproject-374923.Covid.covid_deaths
+WHERE continent is not null
+GROUP BY location
+
+
+## Showing the continents with the highest death counts per pop.
+CREATE VIEW Covid.ContinentsWtHighestDeathPerPopulation
+AS
+SELECT continent, Max(total_deaths) AS TotalDeathCount
+FROM firstproject-374923.Covid.covid_deaths
+WHERE continent is not null
+GROUP BY continent
+
+## Global Numbers per day
+CREATE VIEW Covid.GlobalNumbersPerDay
+AS
+SELECT date, SUM(new_cases) as total_cases, SUM(new_deaths) as total_deaths, (SUM(new_deaths)/SUM(new_cases))*100 AS DeathPercentageGlobal
+FROM firstproject-374923.Covid.covid_deaths
+WHERE continent is not null
+GROUP BY date
+
+## Covid vaccinations
+SELECT *
+FROM firstproject-374923.Covid.covid_vaccination
+WHERE continent is not null
+
+## Joining
+SELECT *
+FROM firstproject-374923.Covid.covid_deaths as dea
+JOIN firstproject-374923.Covid.covid_vaccination as vac
+  ON dea.location = vac.location
+  and dea.date = vac.date
+
+## Looking at total population vs vaccination
+CREATE VIEW Covid.TotalPopulationVsVaccination 
+AS
+SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations,
+SUM(vac.new_vaccinations) over (partition by dea.location ORDER BY dea.location, dea.date) as RollingPeopleVaccinated
+FROM firstproject-374923.Covid.covid_deaths as dea
+JOIN firstproject-374923.Covid.covid_vaccination as vac
+  ON dea.location = vac.location
+  and dea.date = vac.date
+where dea.continent is not null
+
+
+## Using a CTE
+WITH PopvsVac as 
+(
+SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations,
+SUM(vac.new_vaccinations) over (partition by dea.location ORDER BY dea.location, dea.date) as RollingPeopleVaccinated
+FROM firstproject-374923.Covid.covid_deaths as dea
+JOIN firstproject-374923.Covid.covid_vaccination as vac
+  ON dea.location = vac.location
+  and dea.date = vac.date
+where dea.continent is not null
+)
+SELECT *, (RollingPeopleVaccinated/population)*100 AS RollingPercentPopVsVac
+FROM PopvsVac
+
+## Creating View to store data for later Vis
+CREATE VIEW Covid.PercentagePopulationVaccinated 
+as
+SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations,
+SUM(vac.new_vaccinations) over (partition by dea.location ORDER BY dea.location, dea.date) as RollingPeopleVaccinated
+FROM firstproject-374923.Covid.covid_deaths as dea
+JOIN firstproject-374923.Covid.covid_vaccination as vac
+  ON dea.location = vac.location
+  and dea.date = vac.date
+where dea.continent is not null
+
+
