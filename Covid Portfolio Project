@@ -109,4 +109,42 @@ JOIN firstproject-374923.Covid.covid_vaccination as vac
   and dea.date = vac.date
 where dea.continent is not null
 
+## Tabeau Dashboard Data
+
+# Total Global Cases over Deaths
+# Table 1
+SELECT SUM(new_cases) as total_cases, SUM(new_deaths) as total_deaths, (SUM(new_deaths)/SUM(new_cases))*100 AS DeathPercentageGlobal
+FROM firstproject-374923.Covid.covid_deaths
+where continent is not null
+
+# Total Deaths exculding EU, World, International
+# Table 2
+SELECT location, SUM(new_deaths) AS TotalDeathCount
+FROM firstproject-374923.Covid.covid_deaths
+WHERE continent is null
+and location not in ('World', 'European Union', 'International', 'High income', 'Upper middle income',
+'Lower middle income', 'Low income')
+GROUP BY location
+order by TotalDeathCount desc
+
+# Percent of Population Infected
+# Table 3
+SELECT location, population, MAX(total_cases) AS HighestInfectionCount, MAX(total_cases/population)*100 AS PercentofPopulationInfected
+FROM firstproject-374923.Covid.covid_deaths
+WHERE continent is not null and 
+location not in ('World', 'European Union', 'International', 'High income', 'Upper middle income',
+'Lower middle income', 'Low income')
+GROUP BY location, population
+order by PercentofPopulationInfected desc
+
+# Percent of Population Infected
+# Table 4
+SELECT location, population, date, MAX(total_cases) AS HighestInfectionCount, MAX(total_cases/population)*100 AS PercentPopulationInfected
+FROM firstproject-374923.Covid.covid_deaths
+WHERE continent is not null and 
+location not in ('World', 'European Union', 'International', 'High income', 'Upper middle income',
+'Lower middle income', 'Low income')
+GROUP BY location, population, date
+order by PercentPopulationInfected desc
+
 
